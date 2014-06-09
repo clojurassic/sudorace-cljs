@@ -1,0 +1,26 @@
+
+.cell {
+	font-size:   21px;
+	font-weight: bold;
+	line-height: 40px;
+	width:40px;
+	height:40px; 	
+	float: left;	
+	text-align: center;
+	color: #8a3c65;
+}
+
+.fixed {
+	color: #555555;
+	background: #F7F7F7;	
+}
+
+.target_cell {
+    border: 1px solid #8a3c65; 
+	border-collapse:collapse;
+}
+
+.non_target_cell {
+    border: 1px solid #d9d9d0; 
+	border-collapse:collapse;
+}

@@ -12,44 +12,64 @@
 (defn index [row col]
   (+ (* 9 row) col))
 
-(defn cell-id 
-  ([index] (str "cell-"index))
-  ([row col] (cell-id (index row col))))
+(defn cell-id [i] 
+  (str "cell-"i))  
 
-(defn row [index]
-  (int (/ index 9)))
+(defn by-index [i]
+  (by-id (cell-id i)))
 
-(defn col [index]
-  (mod index 9))
+(defn row [i]
+  (int (/ i 9)))
+
+(defn col [i]
+  (mod i 9))
+
+(defn set-class-selected [css-class]
+  (set-classes! (by-index @selected_index) (conj ["cell" "fixed"] css-class)))
 
 (defn move [f] 
-  (set-classes! (by-id (cell-id @selected_index)) ["cell" "fixed" "non_target_cell"])
+  (set-class-selected "non_target_cell")
   (swap! selected_index f) 
-  (set-classes! (by-id (cell-id @selected_index)) ["cell" "fixed" "target_cell"]))
+  (set-class-selected "target_cell"))
+
+(defn inc-rot[n]
+  (let [m (inc n)]
+    (if (> m 8)
+      0
+      m)))
+
+(defn dec-rot[n]
+  (let [m (dec n)]
+    (if (< m 0)
+      8
+      m)))
 
 (defn move-right []  
-  (move inc))
+  (move (fn [i]
+          (index (row i) (inc-rot (col i))))))
 
 (defn move-left []  
-  (move dec))
+  (move (fn [i]
+          (index (row i) (dec-rot (col i))))))
 
 (defn move-up []  
   (move (fn [i]
-          (index (dec (row i)) (col i)))))
+          (index (dec-rot (row i)) (col i)))))
 
 (defn move-down []  
   (move (fn [i]
-          (index (inc (row i)) (col i)))))
+          (index (inc-rot (row i)) (col i)))))
 
-(defn value-at [row col]
-  (get sudoku (index row col))) 
+(defn value-at [i]
+  (get sudoku i)) 
 
 (defn build-cell [row col]
-  (let [class-cell (if (= @selected_index (index row col))
+  (let [i (index row col)
+        class-cell (if (= @selected_index i)
                      "cell fixed target_cell"
                      "cell fixed non_target_cell")]
-    [:div {:id (cell-id row col) 
-           :class class-cell} (value-at row col)]))  
+    [:div {:id (cell-id i) 
+           :class class-cell} (value-at i)]))  
 
 (defn build-grid []
   (h/html 
@@ -63,7 +83,6 @@
   (let [msg (str "cell "(row index)"/"(col index)" clicked")]
     (fn [evt] (js/alert msg))))
 
-; (def arrows {37 :left 38 :up 39 :right 40 :down})
 (def arrows {37 move-left 39 move-right 38 move-up 40 move-down})
 
 (def key-handler
@@ -74,7 +93,7 @@
 
 (defn register-listeners []
   (doseq [i (range 81)]
-    (listen! (by-id (cell-id i)) :click (click-handler i)))
+    (listen! (by-index i) :click (click-handler i)))
   (listen! :keydown key-handler))           
 
 (defn init[]

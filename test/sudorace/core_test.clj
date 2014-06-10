@@ -1,6 +1,6 @@
-(ns sudorace-cljs.core-test
+(ns sudorace.core-test
   (:require [clojure.test :refer :all]
-            [sudorace-cljs.core :refer :all]))
+            [sudorace.core :refer :all]))
 
 (deftest a-test
   (testing "FIXME, I fail."

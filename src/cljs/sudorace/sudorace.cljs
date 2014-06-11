@@ -27,38 +27,53 @@
 (defn set-class-selected [css-class]
   (set-classes! (by-index @selected_index) (conj ["cell" "fixed"] css-class)))
 
-(defn move [f] 
-  (set-class-selected "non_target_cell")
-  (swap! selected_index f) 
-  (set-class-selected "target_cell"))
+(defn set-class [i css-class]
+  (set-classes! (by-index i) (conj ["cell" "fixed"] css-class)))
 
-(defn inc-rot[n]
-  (let [m (inc n)]
-    (if (> m 8)
-      0
-      m)))
+(defn unselect [i]
+  (set-class i "non_target_cell"))
 
-(defn dec-rot[n]
-  (let [m (dec n)]
-    (if (< m 0)
+(defn select [i]
+  (set-class i "target_cell"))
+
+(defn shift-inc[n] 
+  (if (= n 8) 
+    0 
+    (inc n)))
+
+(defn shift-dec[n]
+  (if (= n 0)
       8
-      m)))
+      (dec n)))
 
-(defn move-right []  
-  (move (fn [i]
-          (index (row i) (inc-rot (col i))))))
+(defn move [f] 
+  (unselect @selected_index)  
+  (swap! selected_index f) 
+  (select @selected_index))
+
+(defn move-to [i] 
+  (unselect @selected_index)  
+  (reset! selected_index i) 
+  (select @selected_index))
+
+(defn move-index 
+  "masturbation here we come.
+  Returns a function that applies f-row on row and f-col on col of the given index."
+  [f-row f-col]
+  (fn [i]
+	(index (f-row (row i)) (f-col (col i)))))     
+
+(defn move-right []
+  (move (move-index identity shift-inc)))    
 
 (defn move-left []  
-  (move (fn [i]
-          (index (row i) (dec-rot (col i))))))
+  (move (move-index identity shift-dec)))  
 
 (defn move-up []  
-  (move (fn [i]
-          (index (dec-rot (row i)) (col i)))))
+  (move (move-index shift-dec identity)))
 
 (defn move-down []  
-  (move (fn [i]
-          (index (inc-rot (row i)) (col i)))))
+  (move (move-index shift-inc identity)))
 
 (defn value-at [i]
   (get sudoku i)) 
@@ -79,17 +94,25 @@
         (for [col (range 9)]          
           [:td (build-cell row col)])])]))           
 
-(defn click-handler [index]
-  (let [msg (str "cell "(row index)"/"(col index)" clicked")]
-    (fn [evt] (js/alert msg))))
+(defn click-handler [index]  
+    (fn [evt] (move-to index)))
 
 (def arrows {37 move-left 39 move-right 38 move-up 40 move-down})
 
+(def space-digits (conj {32 0} (zipmap (range 49 58) (range 1 10))))  
+   
+(defn handle-digit [code]
+  (when-let [val (get space-digits code)]
+    (js/alert (str "val "val))))
+
 (def key-handler
   (fn [evt]
-    (let [code (:keyCode evt)]
-      (when (< 36 code 41)
-        ((get arrows code))))))          
+    (let [code (:keyCode evt)
+          ; is-arrow (contains arrows code)]
+          is-arrow (< 36 code 41)]
+      (if is-arrow
+        ((get arrows code))
+        (handle-digit code)))))
 
 (defn register-listeners []
   (doseq [i (range 81)]
